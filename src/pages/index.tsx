@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
-import Editor from "@/components/Editor";
+//import Editor from "@/components/Editor";
+import dynamic from 'next/dynamic';
+
+const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
 
 interface Note {
   id: number;
@@ -11,39 +14,67 @@ interface Note {
 }
 
 export default function Home() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [isOpen, setIsOpen]=useState<boolean>(false);
+  const [notes, setNotes] = useState<Note[]>([]); //상태의 타입이 객제이거나 배열일 때
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null); //null일 수도 아닐 수도
+  const [isOpen, setIsOpen]=useState<boolean>(false); //사이드바 false
 
-  const handleToggleSidebar = () => {
-    setIsOpen((prev) => !prev);
+  const handleToggleSidebar = () => { //사이드바 관리
+    setIsOpen((prev) => !prev); //현재상태의 반대로
   };
 
-  const handleAddNote = () => {
+  const handleAddNote = () => { //메모추가
     const newNote: Note = { id: Date.now(), title: "새 메모", content: "", isPinned: false, createdAt: new Date().toISOString() };
-    setNotes([newNote, ...notes]);
+    setNotes([newNote, ...notes]); //기존 메모 앞에 추가
+    setSelectedNote(newNote);
   };
 
-  const handleUpdateNote = (id: number, newContent: string) => {
-    setNotes(notes.map((note) => (note.id === id ? { ...note, content: newContent } : note)));
+  const handleUpdateNote = (id: number, newContent: string) => { //메모수정
+    setNotes(notes.map((note) => (note.id === id ? { ...note, content: newContent, } : note)));
     if (selectedNote) setSelectedNote({ ...selectedNote, content: newContent });
   };
 
-  const handleDeleteNote = (id: number) => {
-    const updatedNotes=notes.filter((note)=>note.id!==id);
+  const handleDeleteNote = (id: number) => { //메모삭제
+    if (!selectedNote) return;
+    
+    const isPinned = selectedNote.isPinned; //고정여부 확인
 
-    if(updatedNotes.length===0){
-      setSelectedNote(null);
+    const pinnedNote = notes.filter((note)=>note.isPinned);
+    const unpinnedNote = notes.filter((note)=>!note.isPinned);
+
+    const targetNotes = isPinned?pinnedNote:unpinnedNote;
+    const noteIndex = targetNotes.findIndex((note)=>note.id===id);
+
+    const updatedNotes=notes.filter((note)=>note.id!==id); //메모 삭제
+    
+    setNotes(updatedNotes);
+
+    let nextSelectedNote = null;
+
+    if(isPinned){
+      const updatedPinnedNotes = updatedNotes.filter((note)=>note.isPinned);
+      if(updatedPinnedNotes.length>0){
+        const nextIndex = noteIndex<updatedPinnedNotes.length?noteIndex:updatedPinnedNotes.length-1;
+        nextSelectedNote = updatedPinnedNotes[nextIndex];
+      }
+      else{
+        const updatedPinnedNotes = updatedNotes.filter((note)=>!note.isPinned);
+        if(updatedPinnedNotes.length>0){
+          nextSelectedNote = updatedPinnedNotes[0];
+        }
+      }
     }
     else{
-      const currentIndex =notes.findIndex((note)=>note.id===id);
-      const nextNode=updatedNotes[currentIndex]||updatedNotes[currentIndex-1]||updatedNotes[0];
+      const updatedUnpinnedNotes = updatedNotes.filter((note) => !note.isPinned);
+      if (updatedUnpinnedNotes.length > 0) {
+        const nextIndex = noteIndex < updatedUnpinnedNotes.length ? noteIndex : updatedUnpinnedNotes.length - 1;
+        nextSelectedNote = updatedUnpinnedNotes[nextIndex];
+      }
     }
-    setNotes(updatedNotes);
-    //setNotes(notes.filter((note) => note.id !== id));
+
+    setSelectedNote(nextSelectedNote);
   };
 
-  const handleTogglePin = (id: number) => {
+  const handleTogglePin = (id: number) => { //메모고정
     setNotes(
       notes.map((note) =>
         note.id === id ? { ...note, isPinned: !note.isPinned } : note
@@ -53,29 +84,32 @@ export default function Home() {
 
   return (
     <div className="flex flex-col overflow-hidden h-screen">
-      <header className="fixed top-0 left-0 w-full bg-slate-100 border-b p-4 flex justify-between items-center h-14 z-50">
-        <h1 className="flex-1 text-lg font-semibold">🍎 memory storage</h1>
-        <button className="p-2 bg-gray-200 rounded-full">👤</button>
+      <header className="fixed top-0 left-0 w-full bg-slate-100 border-b p-4 flex justify-between items-center h-14 z-50 select-none">
+        <h1 className="flex-1 text-lg font-semibold">memory storage</h1>
+        <button>
+          <img src="/user.png" className="w-9 h-9"/>
+        </button>
       </header>
       <div className="flex flex-1 pt-14">
         <Sidebar
           notes={notes}
+          selectedId={selectedNote ? selectedNote.id : null}
           onSelectNote={(id) => setSelectedNote(notes.find((n) => n.id === id) || null)}
           onAddNote={handleAddNote}
           onDeleteNote={handleDeleteNote}
           onTogglePin={handleTogglePin}
-          isOpen={isOpen}
+          isOpen={isOpen}//얘를 쓰는 이유와 밑에거랑 둘 다 쓰는이유..?
           setIsOpen={setIsOpen}
         />
         <Editor 
           selectedNote={selectedNote}
+          onAddNote={handleAddNote}
           onUpdateNote={handleUpdateNote}
           onDeleteNote={handleDeleteNote}
-          isSidebarOpen={isOpen}
-          onToggleSidebar={handleToggleSidebar}
+          isOpen={isOpen}
+          onToggleSidebar={handleToggleSidebar}//setIsOpen써도 되나?
         />
       </div>
-      
     </div>
   );
 }
