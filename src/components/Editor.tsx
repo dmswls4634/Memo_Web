@@ -1,4 +1,27 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useEditor, EditorContent, Extension, BubbleMenu, ReactNodeViewRenderer } from "@tiptap/react";
+import { Node as ProseMirrorNode } from 'prosemirror-model';
+import { EditorState } from 'prosemirror-state';
+
+import { createPortal } from 'react-dom';
+
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Image from '@tiptap/extension-image';
+import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
+import Table from '@tiptap/extension-table';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import TableRow from '@tiptap/extension-table-row';
+import { Color } from '@tiptap/extension-color';
+import Blockquote from '@tiptap/extension-blockquote';
+import Text from '@tiptap/extension-text';
+import TextStyle from '@tiptap/extension-text-style';
 
 interface Note {
   id: number;
@@ -10,58 +33,783 @@ interface Note {
 
 interface EditorProps {
   selectedNote: Note | null;
+  onAddNote: () => void;
   onUpdateNote: (id: number, newContent: string) => void;
   onDeleteNote: (id: number) => void;
-  isSidebarOpen: boolean;
+  isOpen: boolean;
   onToggleSidebar:()=>void;
 }
 
-export default function Editor({ selectedNote, onUpdateNote, onDeleteNote, isSidebarOpen, onToggleSidebar}: EditorProps) {
-  //const [content, setContent] = useState("");
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (selectedNote) {
-      onUpdateNote(selectedNote.id, e.target.value);
-    }
-  };
 
-  if (!selectedNote) {
-    return <div className="flex-1 p-4 text-gray-400">메모를 선택해주세요.</div>;
+const useMediaQuery = (query: string) => { //반응형
+  const [matches, setMatches] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQueryList = window.matchMedia(query);
+    const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
+
+    setMatches(mediaQueryList.matches);
+    mediaQueryList.addEventListener("change", listener);
+    return () => mediaQueryList.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+};
+
+
+const formatDate = (dateString: string) => { //작성 날짜
+  const date = new Date(dateString); 
+  return date.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "numeric" }).replace(/(\d{4})\.\s*(\d{2})\.\s*(\d{2})\./, "$1년 $2월 $3일");
+};
+
+export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDeleteNote, isOpen, onToggleSidebar}: EditorProps) {
+  const isMobile = useMediaQuery("(max-width: 700px)"); //사이드바가 메모장에 걸쳐짐
+  const isSmallScreen = useMediaQuery("(max-width: 650px)");
+  const [isEditable, setIsEditable] = useState(true);
+  
+  const toggleOptions = () => setShowOptions((prev) => !prev);
+
+  const dropdownRef = useRef<HTMLDivElement>(null); //상단바 드롭다운
+  const colorDropdownRef = useRef<HTMLDivElement>(null); //버블메뉴의 컬러 드롭다운
+  const textDropdownRef = useRef<HTMLDivElement>(null); //버블메뉴의 사이즈 드롭다운
+  const contextMenuRef = useRef<HTMLDivElement | null>(null); //표의 우클릭
+
+  const [showDropdown, setShowDropdown] = useState(false); // 컬러 드롭다운 상태관리
+  const [textDropdown, setTextDropdown] = useState(false); //사이즈 드롭다운 상태관리
+  const [showOptions, setShowOptions] = useState(false); //상단바 드롭다운 상태관리
+  
+  const editorRef= useRef<HTMLDivElement|null>(null);
+  const [isScrolled, setIsScrolled]=useState(false);
+
+  const [selectedTextType, setSelectedTextType] = useState('텍스트'); //사이즈기본
+  const [selectedTextColor, setSelectedTextColor] = useState<string>('#000000'); //컬러 기본
+  const [selectedBgColor, setSelectedBgColor] = useState<string>('#ffffff'); //배경기본
+
+  
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  const editor = useEditor({ //에디터
+    extensions: [
+      StarterKit,
+      Underline,
+      TaskList,
+      Image,
+      Text,
+      TextStyle,
+      Blockquote,
+      Color,
+      Highlight.configure({ multicolor: true }),
+      TaskItem.configure({nested: true}),
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+        defaultProtocol: 'https',
+        protocols: ['http', 'https'],
+        isAllowedUri: (url, ctx) => {
+          try {
+            // construct URL
+            const parsedUrl = url.includes(':') ? new URL(url) : new URL(`${ctx.defaultProtocol}://${url}`)
+
+            // use default validation
+            if (!ctx.defaultValidate(parsedUrl.href)) {
+              return false
+            }
+
+            // disallowed protocols
+            const disallowedProtocols = ['ftp', 'file', 'mailto']
+            const protocol = parsedUrl.protocol.replace(':', '')
+
+            if (disallowedProtocols.includes(protocol)) {
+              return false
+            }
+
+            // only allow protocols specified in ctx.protocols
+            const allowedProtocols = ctx.protocols.map(p => (typeof p === 'string' ? p : p.scheme))
+
+            if (!allowedProtocols.includes(protocol)) {
+              return false
+            }
+
+            // disallowed domains
+            const disallowedDomains = ['example-phishing.com', 'malicious-site.net']
+            const domain = parsedUrl.hostname
+
+            if (disallowedDomains.includes(domain)) {
+              return false
+            }
+
+            // all checks have passed
+            return true
+          } catch {
+            return false
+          }
+        },
+        shouldAutoLink: url => {
+          try {
+            // construct URL
+            const parsedUrl = url.includes(':') ? new URL(url) : new URL(`https://${url}`)
+
+            // only auto-link if the domain is not in the disallowed list
+            const disallowedDomains = ['example-no-autolink.com', 'another-no-autolink.com']
+            const domain = parsedUrl.hostname
+
+            return !disallowedDomains.includes(domain)
+          } catch {
+            return false
+          }
+        },
+
+      }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+    ],
+    content: selectedNote?.content || "",
+    onUpdate: ({ editor }) => {
+      if (!selectedNote) return;
+      
+      const newContent = editor.getHTML();
+
+      if (newContent !== selectedNote.content) { // 변경된 경우에만 업데이트
+        onUpdateNote(selectedNote.id, newContent);
+      }
+    },
+    editorProps: {
+      handlePaste(view, event) { 
+        const clipboardData = event.clipboardData;
+        if (!clipboardData) return false;
+
+        const text = clipboardData.getData("text/plain");
+        const items = clipboardData.items;
+
+        // 1️⃣ 이미지 파일 붙여넣기
+        for (const item of items) { 
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file) {
+              const formData = new FormData();
+              formData.append("file", file);
+              
+              fetch("/api/upload",{
+                method:"POST",
+                body:formData,
+              })
+                .then((res)=>res.json())
+                .then((data)=>{
+                  if(data.url){
+                    const { schema, tr } = view.state;
+                    const node = schema.nodes.image.create({ src: data.url });
+                    view.dispatch(tr.replaceSelectionWith(node));
+                  }
+                })
+                .catch((err)=>console.error("이미지 업로드 실패:",err));
+              return true;
+            }
+          }
+        }
+  
+        // 2️⃣ URL 붙여넣기 (자동 링크 생성)
+        const urlPattern = /^(https?:\/\/[^\s]+)/;
+        if (urlPattern.test(text)) {
+          const linkHTML = `<a href="${text}" target="_blank" rel="noopener noreferrer"">${text}</a>`;
+          editor?.commands.insertContent(linkHTML);
+
+          return true;
+        }
+
+        return false;
+      },
+    },
+  });
+
+
+  const setLink = useCallback(() => {
+    const previousUrl = editor?.getAttributes('link').href
+    const url = window.prompt('URL', previousUrl)
+
+    // cancelled
+    if (url === null) {
+      return
+    }
+
+    // empty
+    if (url === '') {
+      editor?.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
+
+    // update link
+    try {
+      editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    } catch (e: any) {
+      alert(e.message)
+    }
+  }, [editor])
+
+
+
+  const handleSelectOption = (option: string) => { //옵션 동작
+    if (editor){
+      if(option==="• 구분점 표시 목록"){
+        editor.chain().focus().toggleBulletList().run();
+      }
+      else if(option==="✓ 체크 표시 목록"){
+        editor.chain().focus().toggleTaskList().run();
+      }
+      else if(option==="1. 번호가 매겨진 목록"){
+        editor.chain().focus().toggleOrderedList().run();
+      }
+      else if(option==="B"){
+        editor.chain().focus().toggleBold().run();
+      }
+      else if(option==="I"){
+        editor.chain().focus().toggleItalic().run();
+      }
+      else if(option==="U"){
+        editor.chain().focus().toggleUnderline().run();
+      }
+      else if(option==="S"){
+        editor.chain().focus().toggleStrike().run();
+      }
+    }
+    setShowOptions(false); // 선택 후 닫기
+  };  
+
+
+  const textColors = [
+    { color: 'black', value: '#37352f', border: '#37352f' },
+    { color: 'gray', value: '#787774', border: '#787774' },
+    { color: 'brown', value: '#9f6b53', border: '#9f6b53' },
+    { color: 'orange', value: '#d9730d', border: '#d9730d' },
+    { color: 'yellow', value: '#cb912f', border: '#cb912f' },
+    { color: 'green', value: '#448361', border: '#448361' },
+    { color: 'blue', value: '#337ea9', border: '#337ea9' },
+    { color: 'purple', value: '#9065b0', border: '#9065b0' },
+    { color: 'pink', value: '#c14c8a', border: '#c14c8a' },
+    { color: 'red', value: '#d44c47', border: '#d44c47' },
+  ]
+  
+  const backgroundColors = [
+    { color: 'white', value: '#ffffff', border: '#787774' },
+    { color: 'gray', value: '#f8f8f7', border: '#787774' },
+    { color: 'brown', value: '#f4eeee', border: '#9f6b53' },
+    { color: 'orange', value: '#fbecdd', border: '#d9730d' },
+    { color: 'yellow', value: '#fbf3db', border: '#cb912f' },
+    { color: 'green', value: '#edf3ec', border: '#448361' },
+    { color: 'blue', value: '#e7f3f8', border: '#337ea9' },
+    { color: 'purple', value: '#f8f3fc', border: '#9065b0' },
+    { color: 'pink', value: '#fcf1f6', border: '#c14c8a' },
+    { color: 'red', value: '#fdebec', border: '#d44c47' },
+  ]
+
+
+  useEffect(() => {
+    const el = editorRef.current;
+    if (!el) {
+      console.log('❌ editorRef.current is null');
+      return;
+    }
+  
+    const handleContextMenu = (e: MouseEvent) => {
+      console.log('✅ 우클릭 감지됨:', e.target);
+      e.preventDefault();
+      setContextMenuPos({ x: e.clientX, y: e.clientY });
+    };
+  
+    el.addEventListener('contextmenu', handleContextMenu);
+  
+    return () => {
+      el.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [editor]);
+  
+
+
+  useEffect(() => { //스크롤 이벤트
+    const handleScroll = () => {
+      if (editorRef.current) {
+        setIsScrolled(editorRef.current.scrollTop > 0);
+      }
+    };
+  
+    if (!editorRef.current) return;
+  
+    editorRef.current.addEventListener("scroll", handleScroll);
+  
+    return () => {
+      editorRef.current?.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+
+  /*useEffect(() => {
+    if (!editor) return;
+  
+    const handleUpdate = () => {
+      const { state } = editor;
+      const { selection } = state;
+      const currentNode = selection.$head.parent; // 현재 커서 위치의 노드
+  
+      // 현재 블록이 구분점 목록 또는 번호 목록인지 확인
+      const isBulletList = editor.isActive("bulletList");
+      const isOrderedList = editor.isActive("orderedList");
+  
+      if ((isBulletList || isOrderedList) && currentNode.textContent === "") {
+        setSelectedOption("본문"); // 목록이 비어 있으면 본문으로 변경
+      }
+    };
+  
+    editor.on("update", handleUpdate); // 내용 업데이트 시 감지
+  
+    return () => {
+      editor.off("update", handleUpdate);
+    };
+  }, [editor]);*/
+
+
+  /*useEffect(() => { //버블메뉴가 닫히면 드롭메뉴도 닫힘
+    if (!isBubbleMenuVisible && showDropdown) {
+      setShowDropdown(false)
+    }
+  }, [isBubbleMenuVisible, showDropdown]);
+
+  useEffect(() => {
+    if (!isBubbleMenuVisible && showDropdown) {
+      // editor에 focus가 살아있는 경우에는 닫지 않음
+      const isEditorFocused = editor?.isFocused ?? false
+      if (!isEditorFocused) {
+        setShowDropdown(false)
+      }
+    }
+  }, [isBubbleMenuVisible, showDropdown, editor])*/
+  
+
+  useEffect(() => { //텍스트 유형에 맞게 버블메뉴 텍스트 변경
+    if (!editor) return
+  
+    const handleSelectionChange = () => {
+      const isHeading1 = editor.isActive('heading', { level: 2 })
+      const isHeading2 = editor.isActive('heading', { level: 3 })
+      const isParagraph = editor.isActive('paragraph')
+  
+      if (isHeading1) {
+        setSelectedTextType('제목1')
+      } else if (isHeading2) {
+        setSelectedTextType('제목2')
+      } else if (isParagraph) {
+        setSelectedTextType('텍스트')
+      } else {
+        setSelectedTextType('텍스트') // fallback
+      }
+    }
+  
+    editor.on('selectionUpdate', handleSelectionChange)
+  
+    return () => {
+      editor.off('selectionUpdate', handleSelectionChange)
+    }
+  }, [editor])
+
+
+  useEffect(() => { //색상 선택 
+    if (!editor) return
+
+    const updateColors = () => {
+      const state: EditorState = editor.state
+      const { from, to } = state.selection
+
+      let color: string | null = null
+      let highlight: string | null = null
+
+      state.doc.nodesBetween(from, to, (node: ProseMirrorNode) => {
+        if (node.marks) {
+          node.marks.forEach((mark) => {
+            if (mark.type.name === 'textStyle' && mark.attrs.color) {
+              color = mark.attrs.color
+            }
+            if (mark.type.name === 'highlight' && mark.attrs.color) {
+              highlight = mark.attrs.color
+            }
+          })
+        }
+      })
+
+      setSelectedTextColor(color || '')
+      setSelectedBgColor(highlight || '')
+    }
+
+    editor.on('selectionUpdate', updateColors)
+
+    return () => {
+      editor.off('selectionUpdate', updateColors)
+    }
+  }, [editor])
+  
+  
+
+  /*useEffect(() => { //갑자기 border-b 안될 때
+    console.log("📌 editorRef.current:", editorRef.current);
+  }, []);
+
+  useEffect(() => {
+    console.log("📌 scrollHeight:", editorRef.current?.scrollHeight);
+    console.log("📌 clientHeight:", editorRef.current?.clientHeight);
+  }, []);*/
+
+  
+  useEffect(() => { //새 메모 생성 시 or 다른 메모 선택 시 실행
+    if (editor && selectedNote) {
+      if (editor.getHTML() !== selectedNote.content) { // 현재 내용과 다를 때만 업데이트
+        editor.commands.setContent(selectedNote.content);
+
+        if (selectedNote.content.trim()==="") {
+          editor.commands.focus(); // 새 메모 생성 시 포커스 유지
+        } else {
+          editor.commands.blur(); // 다른 메모 선택 시 커서 블러처리
+        }
+      }
+      //editor.commands.focus();//커서 포거스
+    }
+  }, [selectedNote]);
+
+
+  
+  useEffect(() => { //바깥을 클릭하면 닫히도록
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // context menu가 열려있고, 클릭된 타겟이 context 메뉴 내부가 아닐 경우 닫기
+      if (contextMenuRef.current  && !contextMenuRef.current.contains(event.target as Node)
+      ) {
+        setContextMenuPos(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
+
+ 
+  if (!editor) {
+    return null
   }
 
-  return (
-    <div className="flex-1 pt-[16px] bg-white relative">
-      <div>
-        {!isSidebarOpen&&(
-          <button onClick={onToggleSidebar} className="fixed">
-            <img src="/back-p.png" alt="열기" className="w-6 h-6 rotate-180" />
-          </button>
-        )}
 
-        <div>
-        <button className="px-2 py-1 text-sm border rounded">제목</button>
-          <button className="px-2 py-1 text-sm border rounded">부제목</button>
-          <button className="px-2 py-1 text-sm border rounded">본문</button>
-          <button className="px-2 py-1 text-sm border rounded">● 목록</button>
-          <button className="px-2 py-1 text-sm border rounded">1. 번호 목록</button>
-          <button className="px-2 py-1 text-sm border rounded">━ 선</button>
-          <button className="px-2 py-1 text-sm border rounded">✔ 체크리스트</button>
+  if (!selectedNote) { //아무 메모도 선택되지 않았을 때
+    return <div className="flex-1 p-4 text-gray-400">메모를 선택해주세요.</div>;
+  }
+  
+
+  return (
+    <div className="relative flex-1 bg-white h-[calc(100vh-56px)] flex flex-col">
+      
+      {/*에디터 상단바*/}
+      <div className={`flex h-6 p-7 flex items-center justify-center transition-all ${isScrolled ? "border-b border-gray-300" : ""}`}>
+        
+        {/*사이드바 열기 & 메모삭제*/}
+        <div className="absolute left-4 flex items-center gap-x-4 transition-all duration-300 easy-in-out">
+          {((!isOpen && !isMobile && !isSmallScreen) || isMobile || isSmallScreen)&&(
+            <button onClick={onToggleSidebar} className="w-6 h-6 flex items-center">
+              <img src="/chevron_right.svg" alt="열기" className="w-6 h-6"/>
+            </button>
+          )}
+
+          <button onClick={() => onDeleteNote(selectedNote.id)} className="w-6 h-6 flex items-center" >
+            <img src="/delete.svg" className="" alt="삭제" />
+          </button>
+        </div>
+        
+        {/* 상단바 가운데 */}
+        <div className="relative gap-1" ref={dropdownRef}>
+          <button onClick={toggleOptions} className={`px-2 py-1 text-sm rounded-lg ${showOptions ? "bg-amber-100" : ""}`}>
+            <img src="/list.svg" className="" alt="Aa" />
+          </button>
+          
+          <button onClick={() => editor.chain().focus().setHorizontalRule().run()} className="px-2 py-1 text-sm">
+            <img src="/divider.svg" className="" alt="구분선" />
+          </button>
+          
+          <button 
+            onClick={() => {
+              if (!editor) return
+              editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run()}} 
+            className="px-2 py-1 text-sm">
+            <img src="/table.svg" className="" alt="표 삽입" />
+          </button>
+
+          {showOptions && (
+            <div className="absolute left-[-55px] top-full mt-2 w-50 bg-white shadow-md border rounded-lg p-1 z-50">
+              {/* 목록 스타일 */}
+              {[
+                { label: "• 구분점 표시 목록",  command:"bulletList" },
+                { label: "1. 번호가 매겨진 목록", command:"orderedList" },
+                { label: "✓ 체크 표시 목록", command:"checktList" },
+               ].map(({label, command}) => (
+                <button
+                  key={label}
+                  onClick={() => handleSelectOption(label)}
+                  className={`flex items-center w-full text-left p-2 hover:bg-gray-200 rounded-lg ${
+                    editor?.isActive(command)}`}
+                >
+                  <span className="text-[13.5px]">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        <button className="p-2" onClick={() => onDeleteNote(selectedNote.id)}>
-          <img src="/recyclebin.png" className="w-5 h-5" alt="삭제" />
-        </button>
+        <div className="absolute right-4 flex items-center gap-x-4 transition-all duration-300 easy-in-out">
+          <button onClick={onAddNote} className="w-6 h-6 flex items-center" >
+            <img src="/new.svg" className="" alt="삭제" />
+          </button>
+        </div>
       </div>
       
-      {selectedNote ? (
-        <textarea
-          className="w-full h-full mt-10 p-2 rounded-md focus:outline-none pt-2"
-          placeholder="메모를 작성하세요."
-          value={selectedNote.content}
-          onChange={handleChange}
-        />
-      ) : (
-        <p className="text-gray-500 text-center mt-20">메모를 선택하세요</p>
-      )}
+      <div ref={editorRef} className="w-full flex-1 overflow-auto break-words text-neutral-600 whitespace-pre-wrap px-7 pt-4 focus:outline-none scrollbar-hide" style={{ outline: "none", border: "none" }}>
+        {selectedNote && editor&& (
+          <>
+            <BubbleMenu 
+              editor={editor} 
+              tippyOptions={{ 
+                duration: 100,
+                onHide: () => {
+                  setShowDropdown(false);
+                }
+              }}
+              shouldShow={({ editor, state, from, to }) => {
+                return from !== to && editor.isEditable
+              }}
+            >
+              <div className="flex bg-white border border-gray-200 rounded-lg shadow-sm p-1">
+                {/* 텍스트 */}
+                <div className="relative" ref={textDropdownRef}>
+                  <button
+                    onClick={() => setTextDropdown(!textDropdown)}
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${
+                      editor.isActive('paragraph')}`}
+                  >
+                    <div className="flex items-center">
+                      <div className="flex h-6 items-center px-1 justify-center rounded-md text-[13.5px] font-semibold">
+                        {selectedTextType}
+                      </div>
+                      <img src="/arrow_down.svg" className="w-4 h-4" alt="텍스트 색상" />
+                    </div>
+                  </button>
+                  {textDropdown && (
+                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-md z-50 w-40">
+                      <button
+                        onClick={() => {
+                          editor.chain().focus().setParagraph().run(),
+                          setSelectedTextType('텍스트'), 
+                          setTextDropdown(false),
+                          editor.commands.blur()
+                        }} 
+                        className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                      >
+                        <div className="flex items-center">
+                          <img src="/paragraph.svg" className="w-8 h-5" alt="본문" />
+                          <span className="text-[13.5px]">텍스트</span>
+                        </div>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          editor.chain().focus().toggleHeading({ level: 2 }).run(),
+                          setSelectedTextType('제목1'),
+                          setTextDropdown(false),
+                          editor.commands.blur()
+                        }} 
+                          className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                      >
+                        <div className="flex items-center">
+                          <img src="/h1.svg" className="w-8 h-6" alt="제목1" />
+                          <span className="text-[13.5px]">제목1</span>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          editor.chain().focus().toggleHeading({ level: 3 }).run(),
+                          setSelectedTextType('제목2'),
+                          setTextDropdown(false),
+                          editor.commands.blur()
+                        }} 
+                          className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                      >
+                        <div className="flex items-center">
+                          <img src="/h2.svg" className="w-8 h-6" alt="제목2" />
+                          <span className="text-[13.5px]">제목2</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* BIUS */}
+                {[
+                  { label: "B", className: "font-bold", command:"bold"}, 
+                  { label: "I", className: "italic", command:"italic" }, 
+                  { label: "U", className: "underline", command:"underline" }, 
+                  { label: "S", className: "line-through", command:"strike" },
+                ].map(({ label, className, command }) => (
+                  <button
+                    key={label}
+                    onClick={() => {handleSelectOption(label)}}
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${className} ${
+                      editor.isActive(command) ? 'is-active' : 'hover:bg-gray-200 hover:rounded-lg'}`}
+                  >
+                    <div className="w-6 h-6 flex items-center justify-center rounded-md text-[15px]">
+                      {label}
+                    </div>
+                    
+                  </button>
+                ))}
+                
+                {/* 링크연결 */}
+                <button
+                  onClick={setLink} className={editor.isActive('link') ? 'is-active' : 'hover:bg-gray-200 hover:rounded-lg'}
+                >
+                  <img src="/add_link.svg" className="w-8 h-4" alt="링크연결" />
+                </button>
+
+                {/* 인용 */}
+                <button
+                  onClick={() => editor.chain().focus().toggleBlockquote().run()} 
+                  className={editor.isActive('blockquote') ? 'is-active hover:bg-gray-200 hover:rounded-lg' : 'hover:bg-gray-200 hover:rounded-lg'}
+                >
+                  <img src="/quote.svg" className="w-8 h-5" alt="링크연결" />
+                </button>
+                
+                {/*색상 변경*/}
+                <div className="relative" ref={colorDropdownRef}>
+                  <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${
+                      editor.isActive('textStyle')
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div 
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-[15px] font-semibold border box-border"
+                        style={{ color: selectedTextColor, backgroundColor:selectedBgColor }}
+                      >
+                        A
+                      </div>
+                      <img src="/arrow_down.svg" className="w-4 h-4" alt="텍스트 색상" />
+                    </div>
+                  </button>
+
+                  {showDropdown && (
+                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-3 shadow-md z-50 w-40">
+                      {/* 텍스트 */}
+                      <div>
+                        <div className="text-xs text-gray-500 mb-2">텍스트 색상</div>
+                        <div className="grid grid-cols-5 gap-2">
+                          {textColors.map((c) => (
+                            <button
+                              key={c.value}
+                              className={`
+                                w-6 h-6 flex items-center justify-center rounded-md 
+                                text-[15px] font-semibold border box-border 
+                                ${selectedTextColor === c.value ? 'border-2 border-black' : c.border}
+                              `}
+                              style={{
+                                borderColor: selectedTextColor === c.value ? 'black' : c.border + '33',
+                                color: c.value,
+                              }}
+                              onClick={() => {
+                                editor.chain().focus().setColor(c.value).run()
+                                setSelectedTextColor(c.value)}}
+                            >
+                              A
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 배경 */}
+                      <div>
+                        <div className="text-xs text-gray-500 mt-2 mb-2">배경 색상</div>
+                        <div className="grid grid-cols-5 gap-2">
+                          {backgroundColors.map((c) => (
+                            <button
+                              key={c.value}
+                              className={`
+                                w-6 h-6 rounded-md border box-border 
+                                ${selectedBgColor === c.value ? 'border-2 border-black' : c.border}
+                              `}
+                              style={{
+                                borderColor: selectedBgColor === c.value ? 'black' : c.border+'33',
+                                backgroundColor: c.value,
+                              }}
+                              onClick={() => {
+                                editor.chain().focus().setHighlight({ color: c.value }).run()
+                                setSelectedBgColor(c.value)}}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </BubbleMenu>
+            
+            <div className="flex items-center justify-center">
+              <p className="text-[13px] text-neutral-400 font-normal whitespace-nowrap">{formatDate(selectedNote.createdAt)}</p>
+            </div>
+            
+            <EditorContent editor={editor} spellCheck={false} className="mt-4"/> 
+          </>
+        )}
+      </div>
+      {contextMenuPos &&
+        createPortal(
+          <div 
+            ref={contextMenuRef}
+            className="absolute z-50 p-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm font-normal min-w-[160px] overflow-hidden"
+            style={{ top: contextMenuPos.y, left: contextMenuPos.x }}
+            onClick={() => setContextMenuPos(null)}
+          >
+            {[
+              { label: "앞에 열 추가", action: () => editor.chain().focus().addColumnBefore().run() },
+              { label: "뒤에 열 추가", action: () => editor.chain().focus().addColumnAfter().run() },
+              { label: "열 삭제", action: () => editor.chain().focus().deleteColumn().run() },
+              { label: "앞에 행 추가", action: () => editor.chain().focus().addRowBefore().run() },
+              { label: "뒤에 행 추가", action: () => editor.chain().focus().addRowAfter().run() },
+              { label: "행 삭제", action: () => editor.chain().focus().deleteRow().run() },
+              { label: "표 삭제", action: () => editor.chain().focus().deleteTable().run() },
+              { label: "셀 합병", action: () => editor.chain().focus().mergeCells().run() },
+              { label: "셀 나눔", action: () => editor.chain().focus().splitCell().run() },
+            ].map((item, i) => (
+              <button
+                key={i}
+                onClick={item.action}
+                className="w-full text-left px-4 py-2 hover:bg-gray-200 hover:rounded-xl transition-colors duration-150"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          ,
+          document.body
+        )}
     </div>
   );
 }
