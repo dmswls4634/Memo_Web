@@ -512,12 +512,12 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
 
 
   if (!selectedNote) { //아무 메모도 선택되지 않았을 때
-    return <div className="flex-1 p-4 text-gray-400">메모를 선택해주세요.</div>;
+    return <div className="flex-1 p-4 text-gray-400 dark:bg-[#1e1e1e]">메모를 선택해주세요.</div>;
   }
   
 
   return (
-    <div className="relative flex-1 bg-white h-[calc(100vh-56px)] flex flex-col">
+    <div className="relative flex-1 bg-white h-[calc(100vh-56px)] flex flex-col dark:bg-[#1e1e1e] overflow-hidden">
       
       {/*에디터 상단바*/}
       <div className={`flex h-6 p-7 flex items-center justify-center transition-all ${isScrolled ? "border-b border-gray-300" : ""}`}>
@@ -554,7 +554,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
           </button>
 
           {showOptions && (
-            <div className="absolute left-[-55px] top-full mt-2 w-50 bg-white shadow-md border rounded-lg p-1 z-50">
+            <div className="absolute left-[-55px] top-full mt-2 w-50 bg-white shadow-md border rounded-lg p-1 z-50 dark:bg-[#1e1e1e] dark:text-white">
               {/* 목록 스타일 */}
               {[
                 { label: "• 구분점 표시 목록",  command:"bulletList" },
@@ -772,10 +772,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
             </BubbleMenu>
             
             <div className="flex items-center justify-center">
-              <p className="text-[13px] text-neutral-400 font-normal whitespace-nowrap">{formatDate(selectedNote.createdAt)}</p>
+              <p className="text-[13px] text-neutral-400 font-normal whitespace-nowrap dark:text-white">{formatDate(selectedNote.createdAt)}</p>
             </div>
             
-            <EditorContent editor={editor} spellCheck={false} className="mt-4"/> 
+            <EditorContent editor={editor} spellCheck={false} className="mt-4 dark:text-white"/> 
           </>
         )}
       </div>
