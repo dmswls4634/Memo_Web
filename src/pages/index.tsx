@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar";
 //import Editor from "@/components/Editor";
 import dynamic from 'next/dynamic';
 
+
 const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
 
 interface Note {
@@ -11,9 +12,11 @@ interface Note {
   content: string;
   createdAt: string;
   isPinned: boolean;
+  folder: string;
 }
 
 export default function Home() {
+  const [isDark, setIsDark] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]); //상태의 타입이 객제이거나 배열일 때
   const [selectedNote, setSelectedNote] = useState<Note | null>(null); //null일 수도 아닐 수도
   const [isOpen, setIsOpen]=useState<boolean>(false); //사이드바 false
@@ -23,7 +26,7 @@ export default function Home() {
   };
 
   const handleAddNote = () => { //메모추가
-    const newNote: Note = { id: Date.now(), title: "새 메모", content: "", isPinned: false, createdAt: new Date().toISOString() };
+    const newNote: Note = { id: Date.now(), title: "새 메모", content: "", isPinned: false, createdAt: new Date().toISOString(), folder:"전체" };
     setNotes([newNote, ...notes]); //기존 메모 앞에 추가
     setSelectedNote(newNote);
   };
@@ -82,33 +85,56 @@ export default function Home() {
     );
   };
 
+  const handleUpdateNoteFolder = (id: number, folder: string) => {
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, folder } : note
+      )
+    );
+  };
+
+  const handleDeleteFolder = (folderToDelete: string) => {
+  if (folderToDelete === "전체") return; // '전체'는 삭제 금지
+
+  setNotes((prevNotes) =>
+    prevNotes.map((note) =>
+      note.folder === folderToDelete ? { ...note, folder: "전체" } : note
+    )
+  );
+};
+
+
   return (
-    <div className="flex flex-col overflow-hidden h-screen">
-      <header className="fixed top-0 left-0 w-full bg-slate-100 border-b p-4 flex justify-between items-center h-14 z-50 select-none">
-        <h1 className="flex-1 text-lg font-semibold">memory storage</h1>
-        <button>
-          <img src="/user.png" className="w-9 h-9"/>
-        </button>
-      </header>
-      <div className="flex flex-1 pt-14">
-        <Sidebar
-          notes={notes}
-          selectedId={selectedNote ? selectedNote.id : null}
-          onSelectNote={(id) => setSelectedNote(notes.find((n) => n.id === id) || null)}
-          onAddNote={handleAddNote}
-          onDeleteNote={handleDeleteNote}
-          onTogglePin={handleTogglePin}
-          isOpen={isOpen}//얘를 쓰는 이유와 밑에거랑 둘 다 쓰는이유..?
-          setIsOpen={setIsOpen}
-        />
-        <Editor 
-          selectedNote={selectedNote}
-          onAddNote={handleAddNote}
-          onUpdateNote={handleUpdateNote}
-          onDeleteNote={handleDeleteNote}
-          isOpen={isOpen}
-          onToggleSidebar={handleToggleSidebar}//setIsOpen써도 되나?
-        />
+    <div className={isDark ? "dark" : ""}>
+      <div className="flex flex-col overflow-hidden h-screen ">
+        <header className="fixed top-0 left-0 w-full bg-slate-100 border-b p-4 flex justify-between items-center h-14 z-50 select-none dark:bg-[#1e1e1e] dark:text-white">
+          <h1 className="flex-1 text-lg font-semibold">memory storage</h1>
+          <button onClick={() => setIsDark(!isDark)}>
+            <img src="/dark.svg" className="w-6 h-6"/>
+          </button>
+        </header>
+        <div className="flex flex-1 pt-14">
+          <Sidebar
+            notes={notes}
+            selectedId={selectedNote ? selectedNote.id : null}
+            onSelectNote={(id) => setSelectedNote(notes.find((n) => n.id === id) || null)}
+            onAddNote={handleAddNote}
+            onDeleteNote={handleDeleteNote}
+            onTogglePin={handleTogglePin}
+            isOpen={isOpen}//얘를 쓰는 이유와 밑에거랑 둘 다 쓰는이유..?
+            setIsOpen={setIsOpen}
+            onUpdateNoteFolder={handleUpdateNoteFolder}
+            onDeleteFolder={handleDeleteFolder}
+          />
+          <Editor 
+            selectedNote={selectedNote}
+            onAddNote={handleAddNote}
+            onUpdateNote={handleUpdateNote}
+            onDeleteNote={handleDeleteNote}
+            isOpen={isOpen}
+            onToggleSidebar={handleToggleSidebar}//setIsOpen써도 되나?
+          />
+        </div>
       </div>
     </div>
   );
