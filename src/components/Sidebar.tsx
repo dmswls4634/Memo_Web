@@ -66,7 +66,7 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
   const [searchTerm, setSearchTerm] = useState(""); //메모 검색
   const [selectedFolder, setSelectedFolder] = useState<string>("전체"); //메모 선택된 폴더
   const [newFolderName, setNewFolderName] = useState(""); // 새 폴더 추가
-  const [folders, setFolders] = useState<string[]>(["전체","회원정보","투두리스트"]);
+  const [folders, setFolders] = useState<string[]>(["전체","일기","투두리스트"]);
 
   const isMobile = useMediaQuery("(max-width: 700px)"); //사이드바가 메모장에 걸쳐짐
   const isSmallScreen = useMediaQuery("(max-width: 650px)"); //사이드바가 화면을 꽉 채움

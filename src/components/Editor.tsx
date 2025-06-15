@@ -783,7 +783,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
         createPortal(
           <div 
             ref={contextMenuRef}
-            className="absolute z-50 p-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm font-normal min-w-[160px] overflow-hidden"
+            className="absolute z-50 p-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm font-normal w-4 min-w-[160px] overflow-hidden"
             style={{ top: contextMenuPos.y, left: contextMenuPos.x }}
             onClick={() => setContextMenuPos(null)}
           >
