@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   try {
-    const [_, files] = await form.parse(req);
+    const [, files] = await form.parse(req);
 
     const file = files["file"]?.[0]; // 📌 배열에서 첫 번째 파일 가져오기
     if (!file) {
