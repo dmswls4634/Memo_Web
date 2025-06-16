@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   try {
-    const [fields, files] = await form.parse(req);
+    const [_, files] = await form.parse(req);
 
     const file = files["file"]?.[0]; // 📌 배열에서 첫 번째 파일 가져오기
     if (!file) {
@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ url: `/uploads/${file.newFilename}` });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "File upload failed" });
   }
 }

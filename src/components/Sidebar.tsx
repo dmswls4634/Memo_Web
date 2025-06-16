@@ -347,24 +347,6 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
             placeholder="폴더 생성"
             className="w-full border rounded px-2 py-1 text-sm"
           />
-
-          {/*
-          <button
-            onClick={() => {
-              if (newFolderName.trim() && !folders.includes(newFolderName.trim())) {
-                const newFolders = [...folders, newFolderName.trim()];
-                setFolders(newFolders);
-                if (folderMenu.noteId !== null) {
-                  onUpdateNoteFolder(folderMenu.noteId, newFolderName.trim());
-                }
-                setNewFolderName("");
-                setFolderMenu({ ...folderMenu, visible: false });
-              }
-            }}
-            className="w-full bg-amber-400 hover:bg-amber-500 text-white rounded px-2 py-1 text-sm"
-          >
-            +
-          </button>*/ }
         </div>,
         document.body
       )}

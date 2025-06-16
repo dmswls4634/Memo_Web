@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useEditor, EditorContent, Extension, BubbleMenu, ReactNodeViewRenderer } from "@tiptap/react";
+import { useEditor, EditorContent, BubbleMenu} from "@tiptap/react";
 import { Node as ProseMirrorNode } from 'prosemirror-model';
 import { EditorState } from 'prosemirror-state';
 
@@ -67,7 +67,6 @@ const formatDate = (dateString: string) => { //작성 날짜
 export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDeleteNote, isOpen, onToggleSidebar}: EditorProps) {
   const isMobile = useMediaQuery("(max-width: 700px)"); //사이드바가 메모장에 걸쳐짐
   const isSmallScreen = useMediaQuery("(max-width: 650px)");
-  const [isEditable, setIsEditable] = useState(true);
   
   const toggleOptions = () => setShowOptions((prev) => !prev);
 
@@ -247,8 +246,12 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     // update link
     try {
       editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert(e.message)
+      } else {
+        alert('알 수 없는 에러가 발생했습니다.')
+      }
     }
   }, [editor])
 
@@ -345,7 +348,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     return () => {
       editorRef.current?.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [editor]);
 
 
   /*useEffect(() => {
@@ -488,7 +491,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [editor]);
 
 
 
@@ -502,7 +505,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [editor]);
   
 
  
@@ -592,7 +595,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                   setShowDropdown(false);
                 }
               }}
-              shouldShow={({ editor, state, from, to }) => {
+              shouldShow={({ editor, from, to }) => {
                 return from !== to && editor.isEditable
               }}
             >
@@ -615,10 +618,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                     <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-md z-50 w-40">
                       <button
                         onClick={() => {
-                          editor.chain().focus().setParagraph().run(),
-                          setSelectedTextType('텍스트'), 
-                          setTextDropdown(false),
-                          editor.commands.blur()
+                          editor.chain().focus().setParagraph().run();
+                          setSelectedTextType('텍스트');
+                          setTextDropdown(false);
+                          editor.commands.blur();
                         }} 
                         className={"hover:bg-gray-100 h-6 hover:rounded-md"}
                       >
@@ -630,10 +633,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                       
                       <button
                         onClick={() => {
-                          editor.chain().focus().toggleHeading({ level: 2 }).run(),
-                          setSelectedTextType('제목1'),
-                          setTextDropdown(false),
-                          editor.commands.blur()
+                          editor.chain().focus().toggleHeading({ level: 2 }).run();
+                          setSelectedTextType('제목1');
+                          setTextDropdown(false);
+                          editor.commands.blur();
                         }} 
                           className={"hover:bg-gray-100 h-6 hover:rounded-md"}
                       >
@@ -645,10 +648,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
 
                       <button
                         onClick={() => {
-                          editor.chain().focus().toggleHeading({ level: 3 }).run(),
-                          setSelectedTextType('제목2'),
-                          setTextDropdown(false),
-                          editor.commands.blur()
+                          editor.chain().focus().toggleHeading({ level: 3 }).run();
+                          setSelectedTextType('제목2');
+                          setTextDropdown(false);
+                          editor.commands.blur();
                         }} 
                           className={"hover:bg-gray-100 h-6 hover:rounded-md"}
                       >

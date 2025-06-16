@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
-//import Editor from "@/components/Editor";
 import dynamic from 'next/dynamic';
 
 
