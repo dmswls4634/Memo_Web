@@ -142,7 +142,7 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
     if (notesList.length === 0) return null;
     return (
       <>
-        <p className="text-gray-500 font-semibold mt-4 mb-2 dark:text-white">{title}</p>
+        <p className="text-gray-500 font-semibold mt-4 mb-2 dark:text-[#d4d4d4]">{title}</p>
         {notesList.map((note) => {
           const [title, ...contentLines] = stripHtml(note.content).split("\n");
           const contentPreview = contentLines.join(" ").slice(0, 30);
@@ -155,16 +155,16 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
                 onSelectNote(note.id); //매모선택
               }}
               onContextMenu={(e) => handleContextMenu(e, note.id)}
-                className={`p-2 cursor-pointer rounded-md ${selectedId === note.id ? "bg-amber-100 dark:text-black" : "hover:bg-gray-200 dark:hover:bg-[#333]"}`}
+                className={`p-2 cursor-pointer rounded-md ${selectedId === note.id ? "bg-amber-100 dark:bg-[#4f4f4f]" : "hover:bg-gray-200 dark:hover:bg-[#333]"}`}
             >
               <div className="truncate text-17px font-semibold">{title || "제목 없음"}</div>
               <div className="flex items-center space-x-2 flex-nowrap overflow-hidden">
-                <p className="text-sm text-neutral-600 font-normal whitespace-nowrap">{formatDate(note.createdAt)}</p>
-                <p className="text-sm text-gray-400 truncate font-normal min-w-0 flex-1">{contentPreview || "추가 텍스트 없음"}</p>
+                <p className="text-sm text-neutral-600 font-normal whitespace-nowrap dark:text-gray-400">{formatDate(note.createdAt)}</p>
+                <p className="text-sm text-gray-400 truncate font-normal min-w-0 flex-1 dark:text-gray-500">{contentPreview || "추가 텍스트 없음"}</p>
               </div>
               <div className="flex flex-row items-center mt-1">
-                <img src="/folder.svg" className="w-4 h-4 mr-1.5"/>
-                <p className="text-sm text-gray-400 truncate font-normal min-w-0 flex-1">{note.folder}</p>
+                <img src="/folder.svg" className="w-4 h-4 mr-1.5 dark:brightness-90"/>
+                <p className="text-sm text-gray-400 truncate font-normal min-w-0 flex-1 dark:text-gray-500">{note.folder}</p>
               </div>
             </li>
           );
@@ -191,7 +191,7 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
   return (
     <>
       <aside
-        className={`fixed overflow-y-auto shadow-xl transition-all duration-300 easy-in-out bg-white border-r flex flex-col h-screen h-[calc(100vh-56px)] z-50 dark:bg-[#1e1e1e] dark:text-white
+        className={`fixed overflow-y-auto shadow-xl transition-all  duration-0 easy-in-out bg-white border-r flex flex-col h-screen h-[calc(100vh-56px)] z-50 dark:bg-[#1a1a1a] dark:text-[#d4d4d4]
           ${isOpen ? (isSmallScreen ? "w-full scrollbar-hide" : "w-80 ") : "w-0 left-[-100%] overflow-hidden "}
           ${isMobile ? "absolute" : "relative"}`}
         onClick={() => {
@@ -203,13 +203,13 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
           <>
             <div className="flex items-center mb-4 pt-4 px-4">
               <button onClick={() => setIsOpen(false)}>
-                <img src="/chevron_left.svg" alt="Toggle Sidebar" className="w-6 h-6 transition-transform select-none"/>
+                <img src="/chevron_left.svg" alt="Toggle Sidebar" className="w-6 h-6 transition-transform select-none dark:brightness-75"/>
               </button>
-              <span className="absolute left-1/2 transform -translate-x-1/2 font-semibold text-lg text-neutral-800 select-none dark:text-white">MEMO</span>
+              <span className="absolute left-1/2 transform -translate-x-1/2 font-semibold text-lg text-neutral-800 select-none dark:text-[#d4d4d4]">MEMO</span>
             </div>
             
             <div className="space-y-2 mb-3 px-4">
-              <input className="w-full p-2 text-sm border outline-none rounded-md bg-gray-200"
+              <input className="w-full p-2 text-sm border outline-none rounded-md bg-gray-200 dark:bg-[#2b2b2b] dark:border-gray-600 dark:placeholder-[#5a5a5a]"
                 type="text"
                 placeholder="검색"
                 value={searchTerm}
@@ -217,7 +217,7 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
               />
 
               <div className="relative">
-                <select className="appearance-none border border-gray-300 text-gray-900 text-sm rounded-md focus:border-amber-400 block w-full p-2"
+                <select className="appearance-none border border-gray-300 text-gray-900 text-sm rounded-md focus:border-amber-400 block w-full p-2 dark:bg-[#2b2b2b] dark:border-gray-600 dark:text-[#d4d4d4]"
                   value={selectedFolder}
                   onChange={(e) => setSelectedFolder(e.target.value)}
                 >
@@ -228,12 +228,12 @@ export default function Sidebar({ notes, selectedId, onSelectNote, onAddNote, on
                     </option>
                   ))}
                 </select>
-                <img src="/chevron_right.svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 pointer-events-none"/>
+                <img src="/chevron_right.svg" className="absolute right-2 top-1/2 transform -translate-y-1/2 rotate-90 w-4 h-4 pointer-events-none dark:brightness-75"/>
               </div>
             </div>
             
             <div className="px-4">
-              <button onClick={onAddNote} className="w-full font-semibold bg-amber-400 text-white p-2 rounded-md mb-2 hover:bg-yellow-600">
+              <button onClick={onAddNote} className="w-full font-semibold bg-amber-400 text-white p-2 rounded-md mb-2 hover:bg-yellow-600 dark:brightness-90 ">
                 + 새 메모
               </button>
             </div>

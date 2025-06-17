@@ -38,6 +38,7 @@ interface EditorProps {
   onDeleteNote: (id: number) => void;
   isOpen: boolean;
   onToggleSidebar:()=>void;
+  isDark:boolean;
 }
 
 
@@ -64,7 +65,7 @@ const formatDate = (dateString: string) => { //작성 날짜
   return date.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "numeric" }).replace(/(\d{4})\.\s*(\d{2})\.\s*(\d{2})\./, "$1년 $2월 $3일");
 };
 
-export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDeleteNote, isOpen, onToggleSidebar}: EditorProps) {
+export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDeleteNote, isOpen, onToggleSidebar, isDark}: EditorProps) {
   const isMobile = useMediaQuery("(max-width: 700px)"); //사이드바가 메모장에 걸쳐짐
   const isSmallScreen = useMediaQuery("(max-width: 650px)");
   
@@ -85,7 +86,6 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
   const [selectedTextType, setSelectedTextType] = useState('텍스트'); //사이즈기본
   const [selectedTextColor, setSelectedTextColor] = useState<string>('#000000'); //컬러 기본
   const [selectedBgColor, setSelectedBgColor] = useState<string>('#ffffff'); //배경기본
-
   
   const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
 
@@ -286,29 +286,29 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
 
 
   const textColors = [
-    { color: 'black', value: '#37352f', border: '#37352f' },
-    { color: 'gray', value: '#787774', border: '#787774' },
-    { color: 'brown', value: '#9f6b53', border: '#9f6b53' },
-    { color: 'orange', value: '#d9730d', border: '#d9730d' },
-    { color: 'yellow', value: '#cb912f', border: '#cb912f' },
-    { color: 'green', value: '#448361', border: '#448361' },
-    { color: 'blue', value: '#337ea9', border: '#337ea9' },
-    { color: 'purple', value: '#9065b0', border: '#9065b0' },
-    { color: 'pink', value: '#c14c8a', border: '#c14c8a' },
-    { color: 'red', value: '#d44c47', border: '#d44c47' },
+    { color: 'black', value: '#37352f', border: '#37352f', darkValue: '#d6d6d6', darkBorder: '#3a3a3a' },
+    { color: 'gray', value: '#787774', border: '#787774', darkValue: '#9b9b9b', darkBorder: '#3a3a3a' },
+    { color: 'brown', value: '#9f6b53', border: '#9f6b53', darkValue: '#ba856f', darkBorder: '#4a352d' },
+    { color: 'orange', value: '#d9730d', border: '#d9730d', darkValue: '#c77d48', darkBorder: '#4d3725' },
+    { color: 'yellow', value: '#cb912f', border: '#cb912f', darkValue: '#ca984d', darkBorder: '#42382a' },
+    { color: 'green', value: '#448361', border: '#448361', darkValue: '#529e72', darkBorder: '#273d32' },
+    { color: 'blue', value: '#337ea9', border: '#337ea9', darkValue: '#379ad3', darkBorder: '#283740' },
+    { color: 'purple', value: '#9065b0', border: '#9065b0', darkValue: '#9d68d3', darkBorder: '#3a2f44' },
+    { color: 'pink', value: '#c14c8a', border: '#c14c8a', darkValue: '#d15796', darkBorder: '#4d2e3d' },
+    { color: 'red', value: '#d44c47', border: '#d44c47', darkValue: '#e65b58', darkBorder: '#543131' },
   ]
   
   const backgroundColors = [
-    { color: 'white', value: '#ffffff', border: '#787774' },
-    { color: 'gray', value: '#f8f8f7', border: '#787774' },
-    { color: 'brown', value: '#f4eeee', border: '#9f6b53' },
-    { color: 'orange', value: '#fbecdd', border: '#d9730d' },
-    { color: 'yellow', value: '#fbf3db', border: '#cb912f' },
-    { color: 'green', value: '#edf3ec', border: '#448361' },
-    { color: 'blue', value: '#e7f3f8', border: '#337ea9' },
-    { color: 'purple', value: '#f8f3fc', border: '#9065b0' },
-    { color: 'pink', value: '#fcf1f6', border: '#c14c8a' },
-    { color: 'red', value: '#fdebec', border: '#d44c47' },
+    { color: 'white', value: '#ffffff', border: '#787774', darkValue: '#252525', darkBorder: '#3a3a3a' },
+    { color: 'gray', value: '#f8f8f7', border: '#787774', darkValue: '#2f2f2f', darkBorder: '#434343' },
+    { color: 'brown', value: '#f4eeee', border: '#9f6b53', darkValue: '#4a3228', darkBorder: '#653e2f' },
+    { color: 'orange', value: '#fbecdd', border: '#d9730d', darkValue: '#5c3b23', darkBorder: '#794823' },
+    { color: 'yellow', value: '#fbf3db', border: '#cb912f', darkValue: '#564328', darkBorder: '#69502c' },
+    { color: 'green', value: '#edf3ec', border: '#448361', darkValue: '#243d30', darkBorder: '#26503a' },
+    { color: 'blue', value: '#e7f3f8', border: '#337ea9', darkValue: '#143a4e', darkBorder: '#1a4760' },
+    { color: 'purple', value: '#f8f3fc', border: '#9065b0', darkValue: '#3c2d49', darkBorder: '#4d3662' },
+    { color: 'pink', value: '#fcf1f6', border: '#c14c8a', darkValue: '#4e2c3c', darkBorder: '#6d334f' },
+    { color: 'red', value: '#fdebec', border: '#d44c47', darkValue: '#522e2a', darkBorder: '#753734' },
   ]
 
 
@@ -453,17 +453,6 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
       editor.off('selectionUpdate', updateColors)
     }
   }, [editor])
-  
-  
-
-  /*useEffect(() => { //갑자기 border-b 안될 때
-    console.log("📌 editorRef.current:", editorRef.current);
-  }, []);
-
-  useEffect(() => {
-    console.log("📌 scrollHeight:", editorRef.current?.scrollHeight);
-    console.log("📌 clientHeight:", editorRef.current?.clientHeight);
-  }, []);*/
 
   
   useEffect(() => { //새 메모 생성 시 or 다른 메모 선택 시 실행
@@ -477,10 +466,8 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
           editor.commands.blur(); // 다른 메모 선택 시 커서 블러처리
         }
       }
-      //editor.commands.focus();//커서 포거스
     }
   }, [selectedNote]);
-
 
   
   useEffect(() => { //바깥을 클릭하면 닫히도록
@@ -492,7 +479,6 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editor]);
-
 
 
   useEffect(() => {
@@ -507,7 +493,6 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [editor]);
   
-
  
   if (!editor) {
     return null
@@ -515,12 +500,34 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
 
 
   if (!selectedNote) { //아무 메모도 선택되지 않았을 때
-    return <div className="flex-1 p-4 text-gray-400 dark:bg-[#1e1e1e]">메모를 선택해주세요.</div>;
+    return (
+      <>
+        {(isMobile || isSmallScreen) ? (
+          // 작은 화면 : 가운데 정렬
+          <div className="w-full h-screen flex items-center justify-center text-gray-400 dark:bg-[#1a1a1a] px-4">
+            <div className="flex flex-col items-center">
+              <p className="mb-4">메모가 없습니다.</p>
+              <button
+                onClick={onAddNote}
+                className="px-4 py-2 bg-white text-black rounded hover:bg-gray-200 transition"
+              >
+                <img src="/add.svg" className="w-5 h-5" alt="메모 추가" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          // 큰 화면: 상단 좌측 정렬
+          <div className="flex-1 p-4 text-gray-400 dark:bg-[#1a1a1a]">
+            메모를 선택해주세요.
+          </div>
+        )}
+      </>
+    )
   }
   
 
   return (
-    <div className="relative flex-1 bg-white h-[calc(100vh-56px)] flex flex-col dark:bg-[#1e1e1e] overflow-hidden">
+    <div className="relative flex-1 bg-white h-[calc(100vh-56px)] flex flex-col dark:bg-[#1a1a1a] overflow-hidden">
       
       {/*에디터 상단바*/}
       <div className={`flex h-6 p-7 flex items-center justify-center transition-all ${isScrolled ? "border-b border-gray-300" : ""}`}>
@@ -529,23 +536,23 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
         <div className="absolute left-4 flex items-center gap-x-4 transition-all duration-300 easy-in-out">
           {((!isOpen && !isMobile && !isSmallScreen) || isMobile || isSmallScreen)&&(
             <button onClick={onToggleSidebar} className="w-6 h-6 flex items-center">
-              <img src="/chevron_right.svg" alt="열기" className="w-6 h-6"/>
+              <img src="/chevron_right.svg" alt="열기" className="w-6 h-6 dark:brightness-75"/>
             </button>
           )}
 
           <button onClick={() => onDeleteNote(selectedNote.id)} className="w-6 h-6 flex items-center" >
-            <img src="/delete.svg" className="" alt="삭제" />
+            <img src="/delete.svg" className="dark:brightness-75" alt="삭제" />
           </button>
         </div>
         
         {/* 상단바 가운데 */}
         <div className="relative gap-1" ref={dropdownRef}>
-          <button onClick={toggleOptions} className={`px-2 py-1 text-sm rounded-lg ${showOptions ? "bg-amber-100" : ""}`}>
-            <img src="/list.svg" className="" alt="Aa" />
+          <button onClick={toggleOptions} className={`px-2 py-1 text-sm rounded-lg ${showOptions ? "bg-amber-100 dark:bg-[#4f4f4f]" : ""}`}>
+            <img src="/list.svg" className="dark:brightness-75" alt="Aa" />
           </button>
           
           <button onClick={() => editor.chain().focus().setHorizontalRule().run()} className="px-2 py-1 text-sm">
-            <img src="/divider.svg" className="" alt="구분선" />
+            <img src="/divider.svg" className="dark:brightness-75" alt="구분선" />
           </button>
           
           <button 
@@ -553,11 +560,11 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
               if (!editor) return
               editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run()}} 
             className="px-2 py-1 text-sm">
-            <img src="/table.svg" className="" alt="표 삽입" />
+            <img src="/table.svg" className="dark:brightness-75" alt="표 삽입" />
           </button>
 
           {showOptions && (
-            <div className="absolute left-[-55px] top-full mt-2 w-50 bg-white shadow-md border rounded-lg p-1 z-50 dark:bg-[#1e1e1e] dark:text-white">
+            <div className="absolute left-[-55px] top-full mt-2 w-50 bg-white shadow-md border rounded-lg p-1 z-50 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-[#d4d4d4]">
               {/* 목록 스타일 */}
               {[
                 { label: "• 구분점 표시 목록",  command:"bulletList" },
@@ -567,7 +574,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                 <button
                   key={label}
                   onClick={() => handleSelectOption(label)}
-                  className={`flex items-center w-full text-left p-2 hover:bg-gray-200 rounded-lg ${
+                  className={`flex items-center w-full text-left p-2 hover:bg-gray-200 dark:hover:bg-[#333] rounded-lg ${
                     editor?.isActive(command)}`}
                 >
                   <span className="text-[13.5px]">{label}</span>
@@ -579,7 +586,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
 
         <div className="absolute right-4 flex items-center gap-x-4 transition-all duration-300 easy-in-out">
           <button onClick={onAddNote} className="w-6 h-6 flex items-center" >
-            <img src="/new.svg" className="" alt="삭제" />
+            <img src="/new.svg" className="dark:brightness-75" alt="삭제" />
           </button>
         </div>
       </div>
@@ -599,12 +606,12 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                 return from !== to && editor.isEditable
               }}
             >
-              <div className="flex bg-white border border-gray-200 rounded-lg shadow-sm p-1">
+              <div className="flex bg-white border border-gray-200 rounded-lg shadow-sm p-1 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-[#d4d4d4]">
                 {/* 텍스트 */}
                 <div className="relative" ref={textDropdownRef}>
                   <button
                     onClick={() => setTextDropdown(!textDropdown)}
-                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg dark:hover:bg-[#333]  ${
                       editor.isActive('paragraph')}`}
                   >
                     <div className="flex items-center">
@@ -615,7 +622,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                     </div>
                   </button>
                   {textDropdown && (
-                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-md z-50 w-40">
+                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-2 shadow-md z-50 w-40 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-[#d4d4d4]">
                       <button
                         onClick={() => {
                           editor.chain().focus().setParagraph().run();
@@ -623,10 +630,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                           setTextDropdown(false);
                           editor.commands.blur();
                         }} 
-                        className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                        className={"hover:bg-gray-100 h-6 hover:rounded-md dark:hover:bg-[#333]"}
                       >
                         <div className="flex items-center">
-                          <img src="/paragraph.svg" className="w-8 h-5" alt="본문" />
+                          <img src="/paragraph.svg" className="w-8 h-5 dark:brightness-50" alt="본문" />
                           <span className="text-[13.5px]">텍스트</span>
                         </div>
                       </button>
@@ -638,10 +645,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                           setTextDropdown(false);
                           editor.commands.blur();
                         }} 
-                          className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                          className={"hover:bg-gray-100 h-6 hover:rounded-md dark:hover:bg-[#333]"}
                       >
                         <div className="flex items-center">
-                          <img src="/h1.svg" className="w-8 h-6" alt="제목1" />
+                          <img src="/h1.svg" className="w-8 h-6 dark:brightness-50" alt="제목1" />
                           <span className="text-[13.5px]">제목1</span>
                         </div>
                       </button>
@@ -653,10 +660,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                           setTextDropdown(false);
                           editor.commands.blur();
                         }} 
-                          className={"hover:bg-gray-100 h-6 hover:rounded-md"}
+                          className={"hover:bg-gray-100 h-6 hover:rounded-md dark:hover:bg-[#333]"}
                       >
                         <div className="flex items-center">
-                          <img src="/h2.svg" className="w-8 h-6" alt="제목2" />
+                          <img src="/h2.svg" className="w-8 h-6 dark:brightness-50" alt="제목2" />
                           <span className="text-[13.5px]">제목2</span>
                         </div>
                       </button>
@@ -674,7 +681,7 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                   <button
                     key={label}
                     onClick={() => {handleSelectOption(label)}}
-                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${className} ${
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg dark:hover:bg-[#333] ${className} ${
                       editor.isActive(command) ? 'is-active' : 'hover:bg-gray-200 hover:rounded-lg'}`}
                   >
                     <div className="w-6 h-6 flex items-center justify-center rounded-md text-[15px]">
@@ -686,30 +693,30 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                 
                 {/* 링크연결 */}
                 <button
-                  onClick={setLink} className={editor.isActive('link') ? 'is-active' : 'hover:bg-gray-200 hover:rounded-lg'}
+                  onClick={setLink} className={editor.isActive('link') ? 'is-active' : 'hover:bg-gray-200 hover:rounded-lg dark:hover:bg-[#333]'}
                 >
-                  <img src="/add_link.svg" className="w-8 h-4" alt="링크연결" />
+                  <img src="/add_link.svg" className="w-8 h-4 dark:brightness-200" alt="링크연결" />
                 </button>
 
                 {/* 인용 */}
                 <button
                   onClick={() => editor.chain().focus().toggleBlockquote().run()} 
-                  className={editor.isActive('blockquote') ? 'is-active hover:bg-gray-200 hover:rounded-lg' : 'hover:bg-gray-200 hover:rounded-lg'}
+                  className={editor.isActive('blockquote') ? 'is-active hover:bg-gray-200 hover:rounded-lg' : 'hover:bg-gray-200 hover:rounded-lg dark:hover:bg-[#333]'}
                 >
-                  <img src="/quote.svg" className="w-8 h-5" alt="링크연결" />
+                  <img src="/quote.svg" className="w-8 h-5 dark:brightness-200" alt="링크연결" />
                 </button>
                 
                 {/*색상 변경*/}
                 <div className="relative" ref={colorDropdownRef}>
                   <button
                     onClick={() => setShowDropdown(!showDropdown)}
-                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg ${
+                    className={`p-1 rounded-sm bg-transparent hover:bg-gray-200 hover:rounded-lg dark:hover:bg-[#333] ${
                       editor.isActive('textStyle')
                     }`}
                   >
                     <div className="flex items-center">
                       <div 
-                        className="w-6 h-6 flex items-center justify-center rounded-md text-[15px] font-semibold border box-border"
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-[15px] font-semibold border box-border dark:border-gray-600"
                         style={{ color: selectedTextColor, backgroundColor:selectedBgColor }}
                       >
                         A
@@ -719,26 +726,26 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                   </button>
 
                   {showDropdown && (
-                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-3 shadow-md z-50 w-40">
+                    <div className="absolute top-full left-0 mt-1 flex flex-col gap-2 bg-white border border-gray-200 rounded-lg p-3 shadow-md z-50 w-40 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-[#d4d4d4]">
                       {/* 텍스트 */}
                       <div>
                         <div className="text-xs text-gray-500 mb-2">텍스트 색상</div>
                         <div className="grid grid-cols-5 gap-2">
                           {textColors.map((c) => (
                             <button
-                              key={c.value}
+                              key={isDark ? c.darkValue : c.value}
                               className={`
                                 w-6 h-6 flex items-center justify-center rounded-md 
                                 text-[15px] font-semibold border box-border 
-                                ${selectedTextColor === c.value ? 'border-2 border-black' : c.border}
+                                ${selectedTextColor === (isDark ? c.darkValue : c.value) ? 'border-2 border-black' : isDark ? c.darkBorder : c.border}
                               `}
                               style={{
-                                borderColor: selectedTextColor === c.value ? 'black' : c.border + '33',
-                                color: c.value,
+                                borderColor: selectedTextColor === (isDark ? c.darkValue : c.value) ? 'black' : (isDark ? c.darkBorder : c.border) + '33',
+                                color: isDark ? c.darkValue : c.value,
                               }}
                               onClick={() => {
-                                editor.chain().focus().setColor(c.value).run()
-                                setSelectedTextColor(c.value)}}
+                                editor.chain().focus().setColor(isDark ? c.darkValue : c.value).run()
+                                setSelectedTextColor(isDark ? c.darkValue : c.value)}}
                             >
                               A
                             </button>
@@ -752,18 +759,18 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
                         <div className="grid grid-cols-5 gap-2">
                           {backgroundColors.map((c) => (
                             <button
-                              key={c.value}
+                              key={isDark ? c.darkValue : c.value}
                               className={`
                                 w-6 h-6 rounded-md border box-border 
-                                ${selectedBgColor === c.value ? 'border-2 border-black' : c.border}
+                                ${selectedBgColor === (isDark ? c.darkValue : c.value) ? 'border-2 border-black' : isDark ? c.darkBorder : c.border}
                               `}
                               style={{
-                                borderColor: selectedBgColor === c.value ? 'black' : c.border+'33',
-                                backgroundColor: c.value,
+                                borderColor: selectedBgColor === (isDark ? c.darkValue : c.value) ? 'black' : (isDark ? c.darkBorder : c.border)+'33',
+                                backgroundColor: isDark ? c.darkValue : c.value,
                               }}
                               onClick={() => {
-                                editor.chain().focus().setHighlight({ color: c.value }).run()
-                                setSelectedBgColor(c.value)}}
+                                editor.chain().focus().setHighlight({ color: isDark ? c.darkValue : c.value }).run()
+                                setSelectedBgColor(isDark ? c.darkValue : c.value)}}
                             />
                           ))}
                         </div>
@@ -775,10 +782,10 @@ export default function Editor({ selectedNote, onAddNote, onUpdateNote, onDelete
             </BubbleMenu>
             
             <div className="flex items-center justify-center">
-              <p className="text-[13px] text-neutral-400 font-normal whitespace-nowrap dark:text-white">{formatDate(selectedNote.createdAt)}</p>
+              <p className="text-[13px] text-neutral-400 font-normal whitespace-nowrap dark:text-gray-500">{formatDate(selectedNote.createdAt)}</p>
             </div>
             
-            <EditorContent editor={editor} spellCheck={false} className="mt-4 dark:text-white"/> 
+            <EditorContent editor={editor} spellCheck={false} className="mt-4 dark:text-[#d4d4d4]"/> 
           </>
         )}
       </div>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import dynamic from 'next/dynamic';
 
-
 const Editor = dynamic(() => import('@/components/Editor'), { ssr: false });
 
 interface Note {
@@ -107,9 +106,9 @@ export default function Home() {
     <div className={isDark ? "dark" : ""}>
       <div className="flex flex-col overflow-hidden h-screen ">
         <header className="fixed top-0 left-0 w-full bg-slate-100 border-b p-4 flex justify-between items-center h-14 z-50 select-none dark:bg-[#1e1e1e] dark:text-white">
-          <h1 className="flex-1 text-lg font-semibold">memory storage</h1>
+          <h1 className="flex-1 text-lg font-semibold dark:text-[#d4d4d4]">memory storage</h1>
           <button onClick={() => setIsDark(!isDark)}>
-            <img src="/dark.svg" className="w-6 h-6"/>
+            <img src="/dark.svg" className="w-6 h-6 dark:invert dark:brightness-75 transition"/>
           </button>
         </header>
         <div className="flex flex-1 pt-14">
@@ -131,7 +130,8 @@ export default function Home() {
             onUpdateNote={handleUpdateNote}
             onDeleteNote={handleDeleteNote}
             isOpen={isOpen}
-            onToggleSidebar={handleToggleSidebar}//setIsOpen써도 되나?
+            onToggleSidebar={handleToggleSidebar}
+            isDark={isDark}
           />
         </div>
       </div>

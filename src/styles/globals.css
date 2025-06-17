@@ -5,8 +5,13 @@
 
 
 :root {
+  --text-heading: #37352f
   --background: #ffffff;
   --foreground: #171717;
+}
+
+.dark {
+  --text-heading: #d4d4d4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -188,7 +193,6 @@ body {
   margin-bottom: 4;
   font-size: 1.75rem;
   font-weight:600;
-  color: #37352f;
 }
 
 .ProseMirror h3 {
@@ -197,19 +201,17 @@ body {
   margin-bottom: 4;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #37352f
+  
 }
 
 .ProseMirror ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
-  color: #37352f
 }
 
 .ProseMirror ul {
   list-style-type: disc;
   padding-left: 1.5rem;
-  color: #37352f
 }
 
 a {
